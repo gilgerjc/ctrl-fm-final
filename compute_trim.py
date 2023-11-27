@@ -46,33 +46,33 @@ class ComputeTrim:
         m = P.pl_mass
 
         ## aerodynamic parameters ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        S_wing        = P.S_wing;   b = P.b; c = P.c
+        S_wing        = P.pl_S;   b = P.pl_b; c = P.pl_c
         
         rho           = P.rho
         e             = P.e
-        AR            = P.AR
+        AR            = P.pl_AR
         M             = P.M 
         alpha0        = P.alpha0
         epsilon       = P.epsilon
 
-        C_L_0         = P.C_L_0;        C_D_0 = P.C_D_0;                C_m_0 = P.C_m_0
-        C_L_alpha     = P.C_L_alpha;    C_D_alpha = P.C_D_alpha;        C_m_alpha = P.C_m_alpha
-        C_L_q         = P.C_L_q;        C_D_q = P.C_D_q;                C_m_q = P.C_m_q
-        C_L_delta_e   = P.C_L_delta_e;  C_D_delta_e = P.C_D_delta_e;    C_m_delta_e = P.C_m_delta_e
+        C_L_0         = P.pl_C_L_0;        C_D_0 = P.pl_C_D_0;                C_m_0 = P.pl_C_m_0
+        C_L_alpha     = P.pl_C_L_alpha;    C_D_alpha = P.pl_C_D_alpha;        C_m_alpha = P.pl_C_m_alpha
+        C_L_q         = P.pl_C_L_q;        C_D_q = P.pl_C_D_q;                C_m_q = P.pl_C_m_q
+        C_L_delta_e   = P.pl_C_L_delta_e;  C_D_delta_e = P.pl_C_D_delta_e;    C_m_delta_e = P.pl_C_m_delta_e
     
-        C_D_p         = P.C_D_p
-        C_Y_0         = P.C_Y_0;        C_ell_0 = P.C_ell_0;            C_n_0 = P.C_n_0
-        C_Y_beta      = P.C_Y_beta;     C_ell_beta = P.C_ell_beta;      C_n_beta = P.C_n_beta 
+        C_D_p         = P.pl_C_D_p
+        C_Y_0         = P.pl_C_Y_0;        C_ell_0 = P.pl_C_ell_0;            C_n_0 = P.pl_C_n_0
+        C_Y_beta      = P.pl_C_Y_beta;     C_ell_beta = P.pl_C_ell_beta;      C_n_beta = P.pl_C_n_beta 
         
-        C_Y_p         = P.C_Y_p;        C_ell_p = P.C_ell_p;            C_n_p = P.C_n_p
-        C_Y_r         = P.C_Y_r;        C_ell_r = P.C_ell_r;            C_n_r = P.C_n_r
+        C_Y_p         = P.pl_C_Y_p;        C_ell_p = P.pl_C_ell_p;            C_n_p = P.pl_C_n_p
+        C_Y_r         = P.pl_C_Y_r;        C_ell_r = P.pl_C_ell_r;            C_n_r = P.pl_C_n_r
         
-        C_Y_delta_a   = P.C_Y_delta_a;  C_ell_delta_a = P.C_ell_delta_a; C_n_delta_a = P.C_n_delta_a
-        C_Y_delta_r   = P.C_Y_delta_r;  C_ell_delta_r = P.C_ell_delta_r; C_n_delta_r = P.C_n_delta_r
+        C_Y_delta_a   = P.pl_C_Y_delta_a;  C_ell_delta_a = P.pl_C_ell_delta_a; C_n_delta_a = P.pl_C_n_delta_a
+        C_Y_delta_r   = P.pl_C_Y_delta_r;  C_ell_delta_r = P.pl_C_ell_delta_r; C_n_delta_r = P.pl_C_n_delta_r
         
-        S_prop        = P.S_prop
-        C_prop        = P.C_prop
-        k_motor       = P.k_motor
+        S_prop        = 1.
+        C_prop        = 1.
+        k_motor       = P.pl_k_th
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         # Wind Angles

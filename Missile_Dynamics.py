@@ -78,8 +78,7 @@ class MisDynamics:
         M = U[4][0]
         N = U[5][0]
 
-        # The equations of motion.
-
+        # The equations of motion from Ballistics Journal Source & Beard's Small UAV
         statedot = np.array([[u*np.cos(theta)*np.cos(psi) + v*(np.sin(phi)*np.sin(theta)*np.cos(psi) - np.cos(phi)*np.sin(psi)) + w*(np.cos(phi)*np.sin(theta)*np.cos(psi) + np.sin(phi)*np.sin(psi))],
                       [u*np.cos(theta)*np.sin(psi) + v*(np.sin(phi)*np.sin(theta)*np.sin(psi) + np.cos(phi)*np.cos(psi)) + w*(np.cos(phi)*np.sin(theta)*np.sin(psi) - np.sin(phi)*np.cos(psi))],
                       [-u*np.sin(theta) + v*np.sin(phi)*np.cos(theta) + w*np.cos(phi)*np.cos(theta)],
@@ -105,9 +104,6 @@ class MisDynamics:
         pdot = statedot[9][0]
         qdot = statedot[10][0]
         rdot = statedot[11][0]
-
-        # print("pddot: ", pddot)
-        # print("psidot: ", psidot)
 
         # build xdot and return
         xdot = np.array([[pndot], [pedot], [pddot], [udot], [vdot], [wdot], [phidot], [thetadot], [psidot], [pdot], [qdot], [rdot]])
@@ -183,14 +179,19 @@ class forces_moments:
         p = state[9][0];    q = state[10][0];       r = state[11][0]
 
         # Inputs
-        d_ail = d[0][0]
-        d_ele = d[1][0]
-        d_rud = d[2][0]
-        d_t = d[3][0]
+        d_1 = d[0][0]
+        d_2 = d[1][0]
+        d_3 = d[2][0]
+        d_4 = d[3][0]
+
+        d_ele = 0.5*(d_1 - d_3)
+        d_rud = 0.5*(d_2 - d_4)
+        d_ail = 0.25*(d_1 + d_2 + d_3 + d_4)
+        d_t = 1.
 
         # Parameters
-        m = P.mass;     g = P.gravity;      rho = P.rho
-        S = P.S_wing;   c = P.c;            AR = P.AR;  b = P.b
+        m = P.mi_mass;     g = P.gravity;      rho = P.rho
+        S = P.mi_S;   c = P.mi_c;            AR = P.mi_AR;  b = P.mi_b
 
 
         # Find the force of Gravity in body frame
@@ -204,7 +205,7 @@ class forces_moments:
 
 
         # Find the force of Lift
-        CL0 = P.C_L_0;  CLa = P.C_L_alpha;  CLq = P.C_L_q;  CLde = P.C_L_delta_e
+        CL0 = P.mi_C_L_0;  CLa = P.mi_C_L_alpha;  CLq = P.mi_C_L_q;  CLde = P.mi_C_L_delta_e
         M = P.M;        aL0 = P.alpha0
 
         sig = (1 + np.exp(-M*(alpha-aL0)) + np.exp(M*(alpha+aL0))) / ((1 + np.exp(-M*(alpha-aL0)))*(1 + np.exp(M*(alpha+aL0))))
@@ -214,15 +215,15 @@ class forces_moments:
 
 
         # Find the force of Drag
-        CDp = P.C_D_p;  e = P.e
+        CDp = P.mi_C_D_p;  e = P.e
 
         FD = 0.5*rho*S*VaMag**2 * (CDp + (CL0 + CLa*alpha)**2 /(np.pi*e*AR))  #Magnitude of Drag Force
         FD = np.array([[-FD], [0.], [0.]])  #Force of Drag in Stability Frame (Fs deals with sideslip force)
         FD = Tran.s2b(FD, alpha)            #Force of Drag in Body Frame
 
         # Find the Sideslip Force
-        CY0 = P.C_Y_0;  CYB = P.C_Y_beta;   CYp = P.C_Y_p;  CYr = P.C_Y_r
-        CYda = P.C_Y_delta_a;               CYdr = P.C_Y_delta_r
+        CY0 = P.mi_C_Y_0;  CYB = P.mi_C_Y_beta;   CYp = P.mi_C_Y_p;  CYr = P.mi_C_Y_r
+        CYda = P.mi_C_Y_delta_a;               CYdr = P.mi_C_Y_delta_r
 
         Fs = 0.5*rho*S*VaMag**2 * (CY0 + CYB*beta + CYp*b*p/(2*VaMag) + CYr*b*r/(2*VaMag) + CYda*d_ail + CYdr*d_rud)
         Fs = np.array([[0.], [Fs], [0.]])   #Sideslip Force in Wind Frame
@@ -230,9 +231,9 @@ class forces_moments:
 
 
         # Find the Force of Thrust
-        Sprop = P.S_prop; Cprop = P.C_prop; km = P.k_motor
+        km = P.mi_k_th
 
-        Fprop = 0.5*rho*Sprop*Cprop*((km*d_t)**2 - VaMag**2)    #Magnitude of propellor force
+        Fprop = d_t*km                                          #Magnitude of propulsive force
         Fprop = np.array([[Fprop], [0], [0]])                   #Propellor Force in Body Frame
 
 
@@ -255,14 +256,19 @@ class forces_moments:
         p = state[9][0];    q = state[10][0];       r = state[11][0]
 
         # Inputs
-        d_ail = d[0][0]
-        d_ele = d[1][0]
-        d_rud = d[2][0]
-        d_t = d[3][0]
+        d_1 = d[0][0]
+        d_2 = d[1][0]
+        d_3 = d[2][0]
+        d_4 = d[3][0]
+
+        d_ele = 0.5*(d_1 - d_3)
+        d_rud = 0.5*(d_2 - d_4)
+        d_ail= 0.25*(d_1 + d_2 + d_3 + d_4)
+        d_t = 1.
 
         # Parameters
         rho = P.rho
-        S = P.S_wing;   c = P.c;    b = P.b
+        S = P.mi_S;   c = P.mi_c;    b = P.mi_b
 
 
         # Find Airspeed, Angle of Attack, and Sideslip Angle
@@ -273,23 +279,23 @@ class forces_moments:
 
 
         # Find Pitching Moment
-        Cm0 = P.C_m_0;  Cma = P.C_m_alpha;  Cmq = P.C_m_q;  Cmde = P.C_m_delta_e
+        Cm0 = P.mi_C_m_0;  Cma = P.mi_C_m_alpha;  Cmq = P.mi_C_m_q;  Cmde = P.mi_C_m_delta_e
 
         mp = 0.5*rho*S*c*VaMag**2 * (Cm0 + Cma*alpha + Cmq*c*q/(2*VaMag) + Cmde*d_ele)  #Magnitude of Pitching Moment
         mp = np.array([[0.], [mp], [0.]])   # Pitching Moment in Body Frame
 
 
         # Find Rolling Moment
-        Cl0 = P.C_ell_0;  ClB = P.C_ell_beta;   Clp = P.C_ell_p;    Clr = P.C_ell_r;   
-        Clda = P.C_ell_delta_a;                 Cldr = P.C_ell_delta_r
+        Cl0 = P.mi_C_ell_0;  ClB = P.mi_C_ell_beta;   Clp = P.mi_C_ell_p;    Clr = P.mi_C_ell_r;   
+        Clda = P.mi_C_ell_delta_a;                 Cldr = P.mi_C_ell_delta_r
 
         ml = 0.5*rho*S*b*VaMag**2 * (Cl0 + ClB*beta + Clp*b*p/(2*VaMag) + Clr*b*r/(2*VaMag) + Clda*d_ail + Cldr*d_rud)  #Magnitude of Rolling Moment
         ml = np.array([[ml], [0.], [0.]])   # Rolling Moment in Body Frame (I think it's supposed to be in Body?)
 
 
         # Find Yawing Moment
-        Cn0 = P.C_n_0;  CnB = P.C_n_beta;   Cnp = P.C_n_p;  Cnr = P.C_n_r;
-        Cnda = P.C_n_delta_a;               Cndr = P.C_n_delta_r
+        Cn0 = P.mi_C_n_0;  CnB = P.mi_C_n_beta;   Cnp = P.mi_C_n_p;  Cnr = P.mi_C_n_r
+        Cnda = P.mi_C_n_delta_a;               Cndr = P.mi_C_n_delta_r
 
         mn = 0.5*rho*S*b*VaMag**2 * (Cn0 + CnB*beta + Cnp*b*p/(2*VaMag) + Cnr*b*r/(2*VaMag) + Cnda*d_ail + Cndr*d_rud)  #Magnitude of Yawing Moment
         mn = np.array([[0.], [0.], [mn]])   # Yawing Moment in Body Frame (I think it's body frame?)

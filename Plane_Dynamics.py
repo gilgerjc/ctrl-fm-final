@@ -190,7 +190,7 @@ class forces_moments:
 
         # Parameters
         m = P.pl_mass;     g = P.gravity;      rho = P.rho
-        S = P.S_wing;   c = P.c;            AR = P.AR;  b = P.b
+        S = P.pl_S;   c = P.pl_c;            AR = P.pl_AR;  b = P.pl_b
 
 
         # Find the force of Gravity in body frame
@@ -204,7 +204,7 @@ class forces_moments:
 
 
         # Find the force of Lift
-        CL0 = P.C_L_0;  CLa = P.C_L_alpha;  CLq = P.C_L_q;  CLde = P.C_L_delta_e
+        CL0 = P.pl_C_L_0;  CLa = P.pl_C_L_alpha;  CLq = P.pl_C_L_q;  CLde = P.pl_C_L_delta_e
         M = P.M;        aL0 = P.alpha0
 
         sig = (1 + np.exp(-M*(alpha-aL0)) + np.exp(M*(alpha+aL0))) / ((1 + np.exp(-M*(alpha-aL0)))*(1 + np.exp(M*(alpha+aL0))))
@@ -214,15 +214,15 @@ class forces_moments:
 
 
         # Find the force of Drag
-        CDp = P.C_D_p;  e = P.e
+        CDp = P.pl_C_D_p;  e = P.e
 
         FD = 0.5*rho*S*VaMag**2 * (CDp + (CL0 + CLa*alpha)**2 /(np.pi*e*AR))  #Magnitude of Drag Force
         FD = np.array([[-FD], [0.], [0.]])  #Force of Drag in Stability Frame (Fs deals with sideslip force)
         FD = Tran.s2b(FD, alpha)            #Force of Drag in Body Frame
 
         # Find the Sideslip Force
-        CY0 = P.C_Y_0;  CYB = P.C_Y_beta;   CYp = P.C_Y_p;  CYr = P.C_Y_r
-        CYda = P.C_Y_delta_a;               CYdr = P.C_Y_delta_r
+        CY0 = P.pl_C_Y_0;  CYB = P.pl_C_Y_beta;   CYp = P.pl_C_Y_p;  CYr = P.pl_C_Y_r
+        CYda = P.pl_C_Y_delta_a;               CYdr = P.pl_C_Y_delta_r
 
         Fs = 0.5*rho*S*VaMag**2 * (CY0 + CYB*beta + CYp*b*p/(2*VaMag) + CYr*b*r/(2*VaMag) + CYda*d_ail + CYdr*d_rud)
         Fs = np.array([[0.], [Fs], [0.]])   #Sideslip Force in Wind Frame
@@ -230,10 +230,10 @@ class forces_moments:
 
 
         # Find the Force of Thrust
-        Sprop = P.S_prop; Cprop = P.C_prop; km = P.k_motor
+        Sprop = 1.; Cprop = 1.; km = P.pl_k_th
 
-        Fprop = 0.5*rho*Sprop*Cprop*((km*d_t)**2 - VaMag**2)    #Magnitude of propellor force
-        Fprop = np.array([[Fprop], [0], [0]])                   #Propellor Force in Body Frame
+        Fprop = d_t*km                                          #Magnitude of propulsion force
+        Fprop = np.array([[Fprop], [0], [0]])                   #Propulsion Force in Body Frame
 
 
         # Find the Total Force
@@ -262,7 +262,7 @@ class forces_moments:
 
         # Parameters
         rho = P.rho
-        S = P.S_wing;   c = P.c;    b = P.b
+        S = P.pl_S;   c = P.pl_c;    b = P.pl_b
 
 
         # Find Airspeed, Angle of Attack, and Sideslip Angle
@@ -273,23 +273,23 @@ class forces_moments:
 
 
         # Find Pitching Moment
-        Cm0 = P.C_m_0;  Cma = P.C_m_alpha;  Cmq = P.C_m_q;  Cmde = P.C_m_delta_e
+        Cm0 = P.pl_C_m_0;  Cma = P.pl_C_m_alpha;  Cmq = P.pl_C_m_q;  Cmde = P.pl_C_m_delta_e
 
         mp = 0.5*rho*S*c*VaMag**2 * (Cm0 + Cma*alpha + Cmq*c*q/(2*VaMag) + Cmde*d_ele)  #Magnitude of Pitching Moment
         mp = np.array([[0.], [mp], [0.]])   # Pitching Moment in Body Frame
 
 
         # Find Rolling Moment
-        Cl0 = P.C_ell_0;  ClB = P.C_ell_beta;   Clp = P.C_ell_p;    Clr = P.C_ell_r;   
-        Clda = P.C_ell_delta_a;                 Cldr = P.C_ell_delta_r
+        Cl0 = P.pl_C_ell_0;  ClB = P.pl_C_ell_beta;   Clp = P.pl_C_ell_p;    Clr = P.pl_C_ell_r;   
+        Clda = P.pl_C_ell_delta_a;                 Cldr = P.pl_C_ell_delta_r
 
         ml = 0.5*rho*S*b*VaMag**2 * (Cl0 + ClB*beta + Clp*b*p/(2*VaMag) + Clr*b*r/(2*VaMag) + Clda*d_ail + Cldr*d_rud)  #Magnitude of Rolling Moment
         ml = np.array([[ml], [0.], [0.]])   # Rolling Moment in Body Frame (I think it's supposed to be in Body?)
 
 
         # Find Yawing Moment
-        Cn0 = P.C_n_0;  CnB = P.C_n_beta;   Cnp = P.C_n_p;  Cnr = P.C_n_r;
-        Cnda = P.C_n_delta_a;               Cndr = P.C_n_delta_r
+        Cn0 = P.pl_C_n_0;  CnB = P.pl_C_n_beta;   Cnp = P.pl_C_n_p;  Cnr = P.pl_C_n_r
+        Cnda = P.pl_C_n_delta_a;               Cndr = P.pl_C_n_delta_r
 
         mn = 0.5*rho*S*b*VaMag**2 * (Cn0 + CnB*beta + Cnp*b*p/(2*VaMag) + Cnr*b*r/(2*VaMag) + Cnda*d_ail + Cndr*d_rud)  #Magnitude of Yawing Moment
         mn = np.array([[0.], [0.], [mn]])   # Yawing Moment in Body Frame (I think it's body frame?)
