@@ -17,7 +17,7 @@ from viewers.Animation import Animation
 import dynamics.compute_trim as CompT
 # import dynamics.autopilot as Auto
 
-Vatgt = 50.; Ytgt = 0.; Rtgt = np.inf
+Vatgt = 100.; Ytgt = 0.; Rtgt = np.inf
 CT = CompT.ComputeTrim()
 pl_x_trim, pl_d = CT.compute_trim(Vatgt, Ytgt, Rtgt)
 pl_x_trim[2][0] = -90.
@@ -50,10 +50,11 @@ while sim_time < P.end_time:
 
         # Missile Control and Simulation
         # Thrust as a func of time of the form T = at*b^-ct
-        # d_e, d_r, d_t = mi_dyn.PID(Ntgt, Etgt, Dtgt, Kp, Kd, Ki)          # Missile deflections from PID ctrl
-        # fx, fy, fz = mi_dyn.forces_moments.forces(mi_dyn.state, mi_d)     # Missile forces from deflections
-        # L, M, N = mi_dyn.forces_moments.moments(mi_dyn.state, mi_d)       # Missile moments from deflections
-        miU = np.array([[100.], [0.], [0.], [0.], [0.], [0.]])              # Missile dynamics input at sim_time
+        # d_1, d_2, d_3, d_4 = mi_dyn.PID(Ntgt, Etgt, Dtgt, Kp, Kd, Ki)          # Missile deflections from PID ctrl
+        mi_d = np.array([[-5.*np.pi/180.], [0.], [5.*np.pi/180.], [0.]])
+        fx, fy, fz = Missile.forces_moments.forces(mi_dyn.state, mi_d)     # Missile forces from deflections
+        L, M, N = Missile.forces_moments.moments(mi_dyn.state, mi_d)       # Missile moments from deflections
+        miU = np.array([[fx], [fy], [fz], [L], [M], [N]])              # Missile dynamics input at sim_time
 
         # Target Plane Control and Simulation
         fx, fy, fz, = Plane.forces_moments.forces(pl_dyn.state, pl_d)       # Plane forces from deflections
