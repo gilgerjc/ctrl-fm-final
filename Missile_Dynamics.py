@@ -302,9 +302,7 @@ class forces_moments:
 
 
         # Find Propellor Moment
-        kTp = P.k_Tp;   kO = P.k_omega
-
-        mprop = -kTp*(kO*d_t)**2    #Magnitude of Propellor Reaction Moment
+        mprop = 0.    #Magnitude of Propellor Reaction Moment
         mprop = np.array([[mprop], [0.], [0.]])
 
 
@@ -316,36 +314,71 @@ class forces_moments:
 
         return L, M, N
     
-class Gusts:
-    def Dryden(state, Lu, Lv, Lw, Su, Sv, Sw, Va):
-        '''Compute the components of the gust disturbance'''
-        dt = P.ts_simulation
-        phi = state[6][0]; theta = state[7][0]; psi = state[8][0]
 
-        Hunum = [0.,Su*np.sqrt(2.*Va/Lu)]
-        Huden = [1., Va/Lu]
-        Hu = tf(Hunum,Huden)
+class Guidance:
+    def Lat_PN(dist, dist_l, theta, theta_l, phi, phi_l, N):
+        '''Take the current missile-target distance, the previous missile-target distance, 
+        the distance's angle from the x-axis in spherical coords and vehicle frame, the previous
+        angle from the x-axis, the distance's angle from the z-axis in spherical coords and 
+        vehicle frame, the previous angle from the z-axis, and a PN constant of proportionality
+        Calculate commanded chi_dot to be used in lateral missile PID guidance 
+        '''
+        Ts = P.ts_sensor
 
-        Hvnum = np.multiply(Sv*np.sqrt(3.*Va/Lv),[0., 1., Va/(np.sqrt(3.)*Lv)])
-        Hvden = [1., 2.*Va/Lv, (Va/Lv)**2]
-        Hv = tf(Hvnum, Hvden)
+        # Determine Distances to help Calculate Velocity
+        x_dist = dist*np.sin(phi)*np.cos(theta)
+        y_dist = dist*np.sin(phi)*np.sin(theta)
 
-        Hwnum = np.multiply(Sw*np.sqrt(3*Va/Lw),[0., 1., Va/(np.sqrt(3.)*Lw)])
-        Hwden = [1., 2.*Va/Lw, (Va/Lw)**2]
-        Hw = tf(Hwnum, Hwden)
+        x_dist_l = dist_l*np.sin(phi_l)*np.cos(theta_l)
+        y_dist_l = dist_l*np.sin(phi_l)*np.sin(theta_l)
 
-        WN_u = np.random.normal(0,1,1)
-        WN_v = np.random.normal(0,1,1)
-        WN_w = np.random.normal(0,1,1)
+        # Estimate Relative Velocity in each dimension and estimate Plane's Chi  
+        VTx = (x_dist-x_dist_l)/Ts
+        VTy = (y_dist-y_dist_l)/Ts
+        VT = np.sqrt((VTx**2 + VTy**2))
+        aT = np.pi/2-np.arctan2(VTy, VTx)       # Has to be calculated in the same way as theta to be comparable
 
-        y_u, Tu, x_u = lsim(Hu, U=WN_u[0], T=[0,dt])
-        y_v, Tv, x_v = lsim(Hv, U=WN_v[0], T=[0,dt])
-        y_w, Tw, x_v = lsim(Hw, U=WN_w[0], T=[0,dt])
+        # Find Theta_dot according to PN Navigation Law
+        Thet_dot = VT/dist*np.sin(aT-theta)
+        Chi_dot_c = N*Thet_dot
+        return Chi_dot_c
+    
+    def Lon_PN(dist, dist_l, theta, theta_l, phi, phi_l, N):
+        '''Take the current missile-target distance, the previous missile-target distance, 
+        the distance's angle from the x-axis in spherical coords and vehicle frame, the previous
+        angle from the x-axis, the distance's angle from the z-axis in spherical coords and 
+        vehicle frame, the previous angle from the z-axis, and a PN constant of proportionality
+        Calculate commanded gam_dot to be used in lateral missile PID guidance 
+        '''
+        Ts = P.ts_sensor
 
-        Vwgx = y_u[1]
-        Vwgy = y_v[1]
-        Vwgz = y_w[1]
+        # Determine Distances to help calculate Velocity
+        x_dist = dist*np.sin(phi)*np.cos(theta)
+        y_dist = dist*np.sin(phi)*np.sin(theta)
+        z_dist = dist*np.cos(phi)
 
-        Vwg = np.array([[Vwgx], [Vwgy], [Vwgz]])  #Gust Vector in Body Frame
-        Vwg = Tran.b2v(Vwg, phi, theta, psi)      #Gust Vector in Vehicle Frame
-        return Vwg
+        x_dist_l = dist_l*np.sin(phi_l)*np.cos(theta_l)
+        y_dist_l = dist_l*np.sin(phi_l)*np.sin(theta_l)
+        z_dist_l = dist_l*np.cos(phi_l)
+
+        # Estimate Relative Velocity in each dimension and estimate Plane's Gamma
+        VTx = (x_dist-x_dist_l)/Ts
+        VTy = (y_dist-y_dist_l)/Ts
+        VTz = (z_dist-z_dist_l)/Ts
+        VT = np.sqrt((VTx**2 + VTz**2))
+        aT = np.pi/2-np.arctan2(np.sqrt(VTx**2 + VTy**2), VTz)      # Has to be calculated in the same way as phi to be comparable
+
+        # Find Theta_dot according to PN Navigation Law
+        Phi_dot = VT/dist*np.sin(aT-phi)
+        Gam_dot_c = N*Phi_dot
+        return Gam_dot_c
+
+    def roll_PID():
+        return d_2, d_4
+    
+    def pit_PID():
+        return d_1, d_3
+    
+    def yaw_PID():
+        return d_2, d_4
+
