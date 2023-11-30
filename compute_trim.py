@@ -29,7 +29,7 @@ class ComputeTrim:
         u = [d_ail, d_ele, d_rud, d_t]'''
 
         x0 = np.array([0,0,0])
-        res = minimize(lambda x: self.compute_trim_cost(x,Va,Y,R), x0, method='nelder-mead',options={'xatol': 1e-8, 'disp': True})
+        res = minimize(lambda x: self.compute_trim_cost(x,Va,Y,R), x0, method='nelder-mead',options={'xatol': 1e-9, 'disp': True})
         x_trim, u_trim = self.compute_trim_states_input(res.x,Va,Y,R)   # Find trim states and trim deflections
         return (x_trim, u_trim)         # Return Trim States and Trim Inputs
 
@@ -70,9 +70,7 @@ class ComputeTrim:
         C_Y_delta_a   = P.pl_C_Y_delta_a;  C_ell_delta_a = P.pl_C_ell_delta_a; C_n_delta_a = P.pl_C_n_delta_a
         C_Y_delta_r   = P.pl_C_Y_delta_r;  C_ell_delta_r = P.pl_C_ell_delta_r; C_n_delta_r = P.pl_C_n_delta_r
         
-        S_prop        = 1.
-        C_prop        = 1.
-        k_motor       = P.pl_k_th
+        k_th       = P.pl_k_th
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         # Wind Angles
@@ -110,11 +108,9 @@ class ComputeTrim:
 
         # Find necessary elevator deflection to maintain trim
         d_e = (((jxz*(p**2-r**2)+(jx-jz)*p*r)/(0.5*rho*(Va**2)*c*S_wing))-C_m_0-C_m_alpha*alpha-C_m_q*((c*q)/(2.*Va)))/C_m_delta_e
-        # print("d_e =", d_e)
 
         # Find necessary d_t to maintain trim
-        d_t = np.sqrt(((2.*m*(-r*v+q*w+g*np.sin(theta))-rho*(Va**2)*S_wing*(C_X+C_X_q*((c*q)/(2*Va))+C_X_delta_e*d_e))/(rho*S_prop*C_prop*k_motor**2))+((Va**2)/(k_motor**2)))
-        # print("d_t =", d_t)
+        d_t = (m*(-r*v+q*w+g*np.sin(theta))-rho*(Va**2)*S_wing*(C_X+C_X_q*((c*q)/(2*Va))+C_X_delta_e*d_e))/k_th
 
         # Find necessary rudder and aileron deflection to maintain trim
         temp_1=np.linalg.inv(np.array([[C_ell_delta_a, C_ell_delta_r],
