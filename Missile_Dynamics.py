@@ -389,7 +389,7 @@ class Guidance:
 
         r = np.linalg.norm([x_dist,y_dist,z_dist])
         zetO = np.arcsin( -z_dist/r )
-        zetA = np.arccos( x_dist/(r*np.cos(zetO)) )
+        zetA = np.arccos( x_dist/(x_dist**2+y_dist**2) )
 
         Vt = np.linalg.norm([pl_u,pl_v,pl_w])
         Vm = np.linalg.norm([mi_u,mi_v,mi_w])
@@ -431,8 +431,8 @@ class Guidance:
         roll_error_d1 = error
         
         # PID controller
-        d_e = kp*error + ki*roll_uI + kd*roll_uD
-        d_2 = -d_e/2.; d_4 = d_2
+        d_r = kp*error + ki*roll_uI + kd*roll_uD
+        d_2 = -d_r/2.; d_4 = d_2
 
         # Saturation block
         d_2_sat = sat(d_2,ulim,llim)
@@ -517,8 +517,8 @@ class Guidance:
         yaw_error_d1 = error
         
         # PID controller
-        d_e = kp*error + ki*yaw_uI + kd*yaw_uD
-        d_2 = d_e/2.; d_4 = -d_2
+        d_r = kp*error + ki*yaw_uI + kd*yaw_uD
+        d_2 = -d_r/2.; d_4 = -d_2
 
         # Saturation block
         d_2_sat = sat(d_2,ulim,llim)
