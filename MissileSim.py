@@ -20,7 +20,7 @@ import dynamics.autopilot as Auto
 Vatgt = 250.; Ytgt = 0.; Rtgt = np.inf
 CT = CompT.ComputeTrim()
 pl_x_trim, pl_d = CT.compute_trim(Vatgt, Ytgt, Rtgt)
-pl_x_trim[1][0] = -30.; pl_x_trim[2][0] = -90.
+pl_x_trim[0][0] = 50; pl_x_trim[1][0] = -30.; pl_x_trim[2][0] = -90.
 
 # Initialize Animation, Dynamics, Data Plotter, Input Methods
 anim =  Animation(P.mis_states0, pl_x_trim)
@@ -44,8 +44,8 @@ sph_phi_l = 0.
 
 # Create array of PID gains
 k = np.array([[3., 0.7, 0.05],     # Kp, Kd, Ki for roll control
-              [0.5, 0.05, 0.1],     # Kp, Kd, Ki for pitch control
-              [0.5, 0.05, 0.1]])    # Kp, Kd, Ki for yaw control
+              [1.5, 0.0005, 0.0],     # Kp, Kd, Ki for pitch control
+              [-0.003, 0.00002, 0.0]])    # Kp, Kd, Ki for yaw control
 
 while sim_time < P.end_time:
 
@@ -66,21 +66,26 @@ while sim_time < P.end_time:
         # Implement PN Guidance (state estimation)
         # Psidot_c = Missile.Guidance.Lat_PN(dist,dist_l,sph_thet,sph_thet_l,sph_phi,sph_phi_l,kPN_la)
         # Thetadot_c = Missile.Guidance.Lon_PN(dist,dist_l,sph_thet,sph_thet_l,sph_phi,sph_phi_l,kPN_lo)
-        # Phi_c = 0.
+        Phi_c = 0.
 
         # Implement PN Guidance Proof of Concept (known states)
         Thetadot_c, Psidot_c = Missile.Guidance.PN_Demo(mi_dyn.state,pl_dyn.state,kPN_lo,kPN_la)
-        Phi_c = 0.
 
         # Update last values for next iteration (state estimation)
         # dist_l = dist
         # sph_thet_l = sph_thet
         # sph_phi_l = sph_phi
 
+        if dist <= 7.6:
+            print("Hit")
+
         ts_radar += P.ts_sensor
 
     ts_plot += P.ts_plotting
     while sim_time < ts_plot:
+
+        # Remove the roll degree of freedom until we figure out coordinated turns
+        mi_dyn.state[6][0] = 0.; mi_dyn.state[9][0] = 0.
 
         # Missile Control and Simulation
         # Thrust as a func of time of the form T = at*b^-ct? 
@@ -100,16 +105,16 @@ while sim_time < P.end_time:
         # Update Plane and Missile States using above forces & moments
         pl_dyn.update(plU)
         mi_dyn.update(miU)
+        mi_dyn.state[6][0] = 0.; mi_dyn.state[9][0] = 0.
 
-        if state == 1:
-            print("Distance:",dist," Spherical Theta:",sph_thet," Spherical Phi:",sph_phi, " Mode: Roll")
-        elif state == 2:
-            print("Distance:",dist," Spherical Theta:",sph_thet," Spherical Phi:",sph_phi, " Mode: yaw")
+        # if state == 1:
+        #     print("Distance:",dist," Spherical Theta:",sph_thet," Spherical Phi:",sph_phi, " Mode: Roll")
+        # elif state == 2:
+        #     print("Distance:",dist," Spherical Theta:",sph_thet," Spherical Phi:",sph_phi, " Mode: yaw")
 
         sim_time += P.ts_simulation
 
-    Theta_c = 0.; Psi_c = 0.
-    tgts = np.array([N_c, E_c, D_c, Phi_c, Theta_c, Psi_c])
+    tgts = np.array([N_c, E_c, D_c])
     dp.update(sim_time, mi_dyn.state, pl_dyn.state, mi_d, tgts)                        # Update plot including target values
     anim.update(mi_dyn.state, pl_dyn.state) # -pd for height                # Update Plane and Missile in animation
     plt.pause(0.0001)
