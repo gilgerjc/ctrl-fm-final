@@ -10,7 +10,7 @@ gravity = 9.806650
 
 # all in kg*m^2
 # Jxx = 1.957; Jyy = 2.677 E 2; Jzz = 2.677 E 2; Jxz = 0.025 E -9 
-mi_jx= 0.824;  mi_jy= 1.135;  mi_jz= 1.759;  mi_jxz= 0.25
+mi_jx= 0.824;  mi_jy= 1.135;  mi_jz= 1.759;  mi_jxz= 0.25*10**-9
 mi_mass = 13.5
 
 mi_G = mi_jx*mi_jz-mi_jxz**2
@@ -20,7 +20,7 @@ mi_G7 = ((mi_jx-mi_jy)*mi_jx+mi_jxz**2)/mi_G; mi_G8 = mi_jx/mi_G
 
 
 # Initial States
-mis_states0=np.array([[0.], [0.], [-100.], [50.], [0.], [0.], [0.], [0.], [0.], [0.], [0.], [0.]])
+mis_states0=np.array([[0.], [0.], [-100.], [200.], [0.], [0.], [0.], [0.], [0.], [0.], [0.], [0.]])
 
 
 ## Aerodynamic parameters
@@ -37,7 +37,7 @@ mi_k_th = 1769.663
 mi_C_L_0 = 0.23;       mi_C_D_0 = 0.02;          mi_C_m_0 = 0.0135
 mi_C_L_alpha = 5.61;   mi_C_D_alpha = 0.030;      mi_C_m_alpha = -2.74
 mi_C_L_q = 7.95;       mi_C_D_q = 0.0;            mi_C_m_q = -38.21
-mi_C_L_delta_e = 0.13; mi_C_D_delta_e = 0.0135;   mi_C_m_delta_e = -0.99
+mi_C_L_delta_e = 0.13; mi_C_D_delta_e = 0.0135;   mi_C_m_delta_e = -0.069
 
 M = 50
 alpha0 = 0.47
@@ -45,7 +45,7 @@ epsilon = 0.16
 
 mi_C_D_p = 0.0
 mi_C_Y_0 = 0.0;    mi_C_Y_beta = -0.98;   mi_C_Y_p = 0.0;   mi_C_Y_r = 0.0;    mi_C_Y_delta_a = 0.075;  mi_C_Y_delta_r = 0.19
-mi_C_ell_0 = 0.0;  mi_C_ell_beta = -0.13; mi_C_ell_delta_a = 0.17
+mi_C_ell_0 = 0.0;  mi_C_ell_beta = -0.13; mi_C_ell_delta_a = -0.069
 mi_C_n_0 = 0.0;    mi_C_n_beta = 0.073;   mi_C_n_r = -0.095;    mi_C_n_p = -0.069;     mi_C_n_delta_a = -0.011;     mi_C_n_delta_r = -0.069
 mi_C_ell_p = -0.51; mi_C_ell_r = 0.25;     mi_C_ell_delta_r = 0.0024
 
@@ -121,6 +121,8 @@ pl_C_r_dr = pl_G4*pl_C_ell_delta_r + pl_G8*pl_C_n_delta_r
                 #   PID & PN Control Params
 ######################################################################################
 sig_PID = 0.05
+roll_hold_range = 2.*np.pi/180.
+d_max = 45.*np.pi/180.
 
 ######################################################################################
                 #   Simulation Params
@@ -132,4 +134,4 @@ start_time = 0.         # start time for simulation
 end_time = 40.          # end time for simulation
 ts_plotting = ts_simulation*5.      # refresh rate for plots
 
-ts_sensor = ts_simulation*20.  # sample rate for the controller
+ts_sensor = ts_simulation*2.  # sample rate for the controller
