@@ -315,7 +315,9 @@ class forces_moments:
         return L, M, N
     
 
+
 class Guidance:
+    ######################## PN Guidance Laws ############################################
     def Lat_PN(dist, dist_l, theta, theta_l, phi, phi_l, N):
         '''Take the current missile-target distance, the previous missile-target distance, 
         the distance's angle from the x-axis in spherical coords and vehicle frame, the previous
@@ -343,6 +345,7 @@ class Guidance:
         Chi_dot_c = N*Thet_dot
         return Chi_dot_c
     
+
     def Lon_PN(dist, dist_l, theta, theta_l, phi, phi_l, N):
         '''Take the current missile-target distance, the previous missile-target distance, 
         the distance's angle from the x-axis in spherical coords and vehicle frame, the previous
@@ -353,32 +356,185 @@ class Guidance:
         Ts = P.ts_sensor
 
         # Determine Distances to help calculate Velocity
-        x_dist = dist*np.sin(phi)*np.cos(theta)
-        y_dist = dist*np.sin(phi)*np.sin(theta)
-        z_dist = dist*np.cos(phi)
+        x_dist = dist*np.cos(phi)*np.cos(theta)
+        y_dist = dist*np.cos(phi)*np.sin(theta)
+        z_dist = dist*np.sin(phi)
 
-        x_dist_l = dist_l*np.sin(phi_l)*np.cos(theta_l)
-        y_dist_l = dist_l*np.sin(phi_l)*np.sin(theta_l)
-        z_dist_l = dist_l*np.cos(phi_l)
+        x_dist_l = dist_l*np.cos(phi_l)*np.cos(theta_l)
+        y_dist_l = dist_l*np.cos(phi_l)*np.sin(theta_l)
+        z_dist_l = dist_l*np.sin(phi_l)
 
         # Estimate Relative Velocity in each dimension and estimate Plane's Gamma
         VTx = (x_dist-x_dist_l)/Ts
         VTy = (y_dist-y_dist_l)/Ts
         VTz = (z_dist-z_dist_l)/Ts
         VT = np.sqrt((VTx**2 + VTz**2))
-        aT = np.pi/2-np.arctan2(np.sqrt(VTx**2 + VTy**2), VTz)      # Has to be calculated in the same way as phi to be comparable
+        aT = np.arctan(VTz/np.sqrt(VTx**2 + VTy**2))      # Has to be calculated in the same way as phi to be comparable
 
         # Find Theta_dot according to PN Navigation Law
         Phi_dot = VT/dist*np.sin(aT-phi)
         Gam_dot_c = N*Phi_dot
         return Gam_dot_c
 
-    def roll_PID():
-        return d_2, d_4
-    
-    def pit_PID():
-        return d_1, d_3
-    
-    def yaw_PID():
-        return d_2, d_4
+    def PN_Demo(mi_state, pl_state, N_lon, N_lat):
+        mi_pn = mi_state[0][0]; mi_pe = mi_state[1][0]; mi_pd = mi_state[2][0]
+        mi_u = mi_state[3][0];  mi_v = mi_state[4][0];  mi_w = mi_state[5][0]
+        mi_thet = mi_state[7][0]; mi_psi = mi_state[8][0]
 
+        pl_pn = pl_state[0][0]; pl_pe = pl_state[1][0]; pl_pd = pl_state[2][0]
+        pl_u = pl_state[3][0];  pl_v = pl_state[4][0];  pl_w = pl_state[5][0]
+        pl_thet = pl_state[7][0]; pl_psi = pl_state[8][0]
+
+        x_dist = pl_pn-mi_pn; y_dist = pl_pe-mi_pe; z_dist = pl_pd-mi_pd
+
+        r = np.linalg.norm([x_dist,y_dist,z_dist])
+        zetO = np.arcsin( -z_dist/r )
+        zetA = np.arccos( x_dist/(r*np.cos(zetO)) )
+
+        Vt = np.linalg.norm([pl_u,pl_v,pl_w])
+        Vm = np.linalg.norm([mi_u,mi_v,mi_w])
+
+        zetOdot = (Vt*np.sin(pl_thet-zetO) - Vm*np.sin(mi_thet-zetO))
+        zetAdot = (Vt*np.sin(pl_psi-zetA) - Vm*np.sin(mi_psi-zetA))
+
+        Gam_dot_c = N_lon*zetOdot
+        Chi_dot_c = N_lat*zetAdot
+        return Gam_dot_c, Chi_dot_c
+
+        ######################## PID Controllers ############################################
+    def roll_PID(phi_c, phi, k, flag):
+        global roll_uI
+        global roll_uD
+        global roll_error_d1
+        sig = P.sig_PID
+        dt = P.ts_simulation
+
+        # Upper and lower limits for aileron deflection
+        ulim = P.d_max; llim = -P.d_max
+        
+        # Gains for aileron control loop
+        kp = k[0]; kd = k[1]; ki = k[2]
+        
+        # Integrator Reset Flag
+        if flag == 1:
+            roll_uI = 0.; roll_uD = 0.
+            roll_error_d1 = 0.
+        
+        # Determine current error
+        error = phi_c - phi
+
+        # Find integrator and differentiator for PID control
+        roll_uI = roll_uI + (dt/2)*(error + roll_error_d1)
+        roll_uD = (2*sig-dt)/(2*sig+dt)*roll_uD + 2./(2*sig+dt)*(error - roll_error_d1)
+        
+        # Set next error and uD for next iterations
+        roll_error_d1 = error
+        
+        # PID controller
+        d_e = kp*error + ki*roll_uI + kd*roll_uD
+        d_2 = -d_e/2.; d_4 = d_2
+
+        # Saturation block
+        d_2_sat = sat(d_2,ulim,llim)
+        d_4_sat = sat(d_4, ulim, llim)
+
+        # Integrator unwind if there is integrator control
+        if ki != 0:
+            roll_uI = roll_uI + dt/ki*(d_2_sat-d_2)
+
+        return d_2_sat, d_4_sat
+    
+
+    def pit_PID(thetdot_c, thetdot, k, flag):
+        global pit_uI
+        global pit_uD
+        global pit_error_d1
+        sig = P.sig_PID
+        dt = P.ts_simulation
+
+        # Upper and lower limits for aileron deflection
+        ulim = P.d_max; llim = -P.d_max
+        
+        # Gains for aileron control loop
+        kp = k[0]; kd = k[1]; ki = k[2]
+        
+        # Integrator Reset Flag
+        if flag == 1:
+            pit_uI = 0; pit_uD = 0
+            pit_error_d1 = 0
+        
+        # Determine current error
+        error = thetdot_c - thetdot
+
+        # Find integrator and differentiator for PID control
+        pit_uI = pit_uI + (dt/2)*(error + pit_error_d1)
+        pit_uD = (2*sig-dt)/(2*sig+dt)*pit_uD + 2./(2*sig+dt)*(error - pit_error_d1)
+        
+        # Set next error and uD for next iterations
+        pit_error_d1 = error
+        
+        # PID controller
+        d_e = kp*error + ki*pit_uI + kd*pit_uD
+        d_1 = -d_e/2.; d_3 = -d_1
+
+        # Saturation block
+        d_1_sat = sat(d_1,ulim,llim)
+        d_3_sat = sat(d_3, ulim, llim)
+
+        # Integrator unwind if there is integrator control
+        if ki != 0:
+            pit_uI = pit_uI + dt/ki*(d_1_sat-d_1)
+
+        return d_1_sat, d_3_sat
+        
+
+    def yaw_PID(psidot_c, psidot, k, flag):
+        global yaw_uI
+        global yaw_uD
+        global yaw_error_d1
+        sig = P.sig_PID
+        dt = P.ts_simulation
+
+        # Upper and lower limits for aileron deflection
+        ulim = P.d_max; llim = -P.d_max
+        
+        # Gains for aileron control loop
+        kp = k[0]; kd = k[1]; ki = k[2]
+        
+        # Integrator Reset Flag
+        if flag == 1:
+            yaw_uI = 0; yaw_uD = 0
+            yaw_error_d1 = 0
+        
+        # Determine current error
+        error = psidot_c - psidot
+
+        # Find integrator and differentiator for PID control
+        yaw_uI = yaw_uI + (dt/2)*(error + yaw_error_d1)
+        yaw_uD = (2*sig-dt)/(2*sig+dt)*yaw_uD + 2./(2*sig+dt)*(error - yaw_error_d1)
+        
+        # Set next error and uD for next iterations
+        yaw_error_d1 = error
+        
+        # PID controller
+        d_e = kp*error + ki*yaw_uI + kd*yaw_uD
+        d_2 = d_e/2.; d_4 = -d_2
+
+        # Saturation block
+        d_2_sat = sat(d_2,ulim,llim)
+        d_4_sat = sat(d_4, ulim, llim)
+
+        # Integrator unwind if there is integrator control
+        if ki != 0:
+            yaw_uI = yaw_uI + dt/ki*(d_2_sat-d_2)
+
+        return d_2_sat, d_4_sat
+    
+
+def sat(u, uplim, lolim):
+    if u >= uplim:
+        u = uplim
+    elif u <= lolim:
+        u = lolim
+
+    return u
