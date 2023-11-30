@@ -214,7 +214,7 @@ class forces_moments:
 
 
         # Find the force of Drag
-        CDp = P.pl_C_D_p;  e = P.e
+        CDp = P.pl_C_D_0; e = P.e
 
         FD = 0.5*rho*S*VaMag**2 * (CDp + (CL0 + CLa*alpha)**2 /(np.pi*e*AR))  #Magnitude of Drag Force
         FD = np.array([[-FD], [0.], [0.]])  #Force of Drag in Stability Frame (Fs deals with sideslip force)
@@ -296,9 +296,7 @@ class forces_moments:
 
 
         # Find Propellor Moment
-        kTp = P.k_Tp;   kO = P.k_omega
-
-        mprop = -kTp*(kO*d_t)**2    #Magnitude of Propellor Reaction Moment
+        mprop = 0.    #Magnitude of Propellor Reaction Moment
         mprop = np.array([[mprop], [0.], [0.]])
 
 
