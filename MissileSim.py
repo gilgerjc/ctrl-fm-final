@@ -45,16 +45,18 @@ print("Press Command-Q to exit...")
 
 # Create PN Stuff
 Ts = P.ts_simulation
-kPN_la = 2.
-kPN_lo = 2.
+Thet_c = 0.; ttd_l = 0.
+Psi_c = 0.; psd_l = 0.
+kPN_la = 5.
+kPN_lo = 5.
 # dist_l = 0.
 # sph_thet_l = 0.
 # sph_phi_l = 0.
 
 # Create array of PID gains
-k = np.array([[-0.2*k_phi[0], 0.005*k_phi[1], 0.001*k_phi[2]],     # Kp, Kd, Ki for roll control
-              [0.6*k_thet[0], 0.005*k_thet[1], 0.01*k_thet[2]],     # Kp, Kd, Ki for pitch control
-              [0.5*k_chi[0], 0.008*k_chi[1], 0.1*k_chi[2]]])    # Kp, Kd, Ki for yaw control
+k = np.array([[1.*k_phi[0], 0.04*k_phi[1], 0.],     # Kp, Kd, Ki for roll control
+              [2.7*k_thet[0], 0.9*k_thet[1], 1.*0.2],     # Kp, Kd, Ki for pitch control
+              [-1.3*k_chi[0], 0., 0.8*k_chi[2]]])    # Kp, Kd, Ki for yaw control
 
 while sim_time < P.end_time:
 
@@ -66,7 +68,7 @@ while sim_time < P.end_time:
 
         dist = np.sqrt(x_dist**2 + y_dist**2 + z_dist**2)                   # Distance from missile to plane in spherical coordinates based on Vehicle Frame
         sph_thet = np.arctan(y_dist/x_dist)                               # Distance's angle from x-axis in spherical coordinates based on Vehicle Frame
-        sph_phi = np.arctan( z_dist/np.sqrt(x_dist**2 + y_dist**2) )      # Distance's angle from projection of dist on xy-plane in spherical coordinates, based on Vehicle Frame
+        sph_phi = np.arctan( -z_dist/np.sqrt(x_dist**2 + y_dist**2) )      # Distance's angle from projection of dist on xy-plane in spherical coordinates, based on Vehicle Frame
 
         N_c = dist*np.cos(sph_phi)*np.cos(sph_thet) + mi_dyn.state[0][0]    # Target x-position in vehicle for plotting
         E_c = dist*np.cos(sph_phi)*np.sin(sph_thet) + mi_dyn.state[1][0]    # Target y-position in vehicle for plotting
@@ -78,7 +80,7 @@ while sim_time < P.end_time:
         # Phi_c = 0.
 
         # Implement PN Guidance Proof of Concept (known states)
-        Thetadot_c, Psidot_c = Missile.Guidance.PN_Demo(mi_dyn.state,pl_dyn.state,kPN_lo,kPN_la)
+        # Thetadot_c, Psidot_c = Missile.Guidance.PN_Demo(mi_dyn.state,pl_dyn.state,kPN_lo,kPN_la)
 
         # Update last values for next iteration (state estimation)
         # dist_l = dist
@@ -93,10 +95,11 @@ while sim_time < P.end_time:
     ts_plot += P.ts_plotting
     while sim_time < ts_plot:
 
-        # Remove the roll degree of freedom until we figure out coordinated turns
+        # Thet_c += 1/2*(Ts)*(Thetadot_c+ttd_l)       # Estimate theta for PID control
+        # Psi_c += 1/2*(Ts)*(Psidot_c+psd_l)          # Estimate psi for PID control
 
         # Find deflections from autopilot/state machine
-        d_a, d_e, d_r = Auto.autopilot(sim_time, mi_dyn.state[6][0], Thetadot_c, mi_dyn.state[10][0], Psidot_c, mi_dyn.state[11][0], k)
+        d_a, d_e, d_r = Auto.autopilot(sim_time, mi_dyn.state[6][0], sph_phi, mi_dyn.state[7][0], sph_thet, mi_dyn.state[8][0], k)
         mi_d = np.array([[d_a], [d_e], [d_r]])                      # Array of missile deflections
         fx, fy, fz = Missile.forces_moments.forces(mi_dyn.state, mi_d)     # Missile forces from deflections
         L, M, N = Missile.forces_moments.moments(mi_dyn.state, mi_d)       # Missile moments from deflections
@@ -119,7 +122,7 @@ while sim_time < P.end_time:
 
         sim_time += P.ts_simulation
 
-    tgts = np.array([N_c, E_c, D_c, Thetadot_c, Psidot_c])
+    tgts = np.array([N_c, E_c, D_c, sph_phi, sph_thet])
     dp.update(sim_time, mi_dyn.state, pl_dyn.state, mi_d, tgts)                        # Update plot including target values
     anim.update(mi_dyn.state, pl_dyn.state) # -pd for height                # Update Plane and Missile in animation
     plt.pause(0.0001)
