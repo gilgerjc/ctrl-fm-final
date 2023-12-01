@@ -24,9 +24,9 @@ pl_x_trim[0][0] = 50; pl_x_trim[1][0] = -30.; pl_x_trim[2][0] = -90.
 
 # Initialize Animation, Dynamics, Data Plotter, Input Methods
 anim =  Animation(P.mis_states0, pl_x_trim)
-pl_dyn = Plane.UAVDynamics(pl_x_trim)                           # MiG ...?
+pl_dyn = Plane.UAVDynamics(pl_x_trim)                           # MiG-21
 mi_dyn = Missile.MisDynamics(P.mis_states0)                     # AIM-7A Missile
-dp =        dataPlotter()
+dp = dataPlotter()
 
 # Initialize the simulation
 sim_time = P.start_time
@@ -36,16 +36,16 @@ print("Press Command-Q to exit...")
 
 # Create PN Stuff
 Ts = P.ts_simulation
-kPN_la = 1.
-kPN_lo = 1.
-dist_l = 0.
-sph_thet_l = 0.
-sph_phi_l = 0.
+kPN_la = 3.
+kPN_lo = 3.
+# dist_l = 0.
+# sph_thet_l = 0.
+# sph_phi_l = 0.
 
 # Create array of PID gains
-k = np.array([[3., 0.7, 0.05],     # Kp, Kd, Ki for roll control
-              [1.5, 0.0005, 0.0],     # Kp, Kd, Ki for pitch control
-              [-0.003, 0.00002, 0.0]])    # Kp, Kd, Ki for yaw control
+k = np.array([[0.003, 0.02, 0.005],     # Kp, Kd, Ki for roll control
+              [-0.002, 0.05, 0.01],     # Kp, Kd, Ki for pitch control
+              [-0.003, 0.05, 0.0]])    # Kp, Kd, Ki for yaw control
 
 while sim_time < P.end_time:
 
@@ -66,7 +66,7 @@ while sim_time < P.end_time:
         # Implement PN Guidance (state estimation)
         # Psidot_c = Missile.Guidance.Lat_PN(dist,dist_l,sph_thet,sph_thet_l,sph_phi,sph_phi_l,kPN_la)
         # Thetadot_c = Missile.Guidance.Lon_PN(dist,dist_l,sph_thet,sph_thet_l,sph_phi,sph_phi_l,kPN_lo)
-        Phi_c = 0.
+        # Phi_c = 0.
 
         # Implement PN Guidance Proof of Concept (known states)
         Thetadot_c, Psidot_c = Missile.Guidance.PN_Demo(mi_dyn.state,pl_dyn.state,kPN_lo,kPN_la)
@@ -85,14 +85,14 @@ while sim_time < P.end_time:
     while sim_time < ts_plot:
 
         # Remove the roll degree of freedom until we figure out coordinated turns
-        mi_dyn.state[6][0] = 0.; mi_dyn.state[9][0] = 0.
+        # mi_dyn.state[6][0] = 0.; mi_dyn.state[9][0] = 0.
 
         # Missile Control and Simulation
         # Thrust as a func of time of the form T = at*b^-ct? 
 
         # Find deflections from autopilot/state machine
-        d_1, d_2, d_3, d_4, state = Auto.autopilot(sim_time, Phi_c, mi_dyn.state[6][0], Thetadot_c, mi_dyn.state[10][0], Psidot_c, mi_dyn.state[11][0], k)
-        mi_d = np.array([[d_1], [d_2], [d_3], [d_4]])                      # Array of missile deflections
+        d_a, d_e, d_r = Auto.autopilot(sim_time, mi_dyn.state[6][0], Thetadot_c, mi_dyn.state[10][0], Psidot_c, mi_dyn.state[11][0], k)
+        mi_d = np.array([[d_a], [d_e], [d_r]])                      # Array of missile deflections
         fx, fy, fz = Missile.forces_moments.forces(mi_dyn.state, mi_d)     # Missile forces from deflections
         L, M, N = Missile.forces_moments.moments(mi_dyn.state, mi_d)       # Missile moments from deflections
         miU = np.array([[fx], [fy], [fz], [L], [M], [N]])              # Missile dynamics input at sim_time
@@ -105,7 +105,7 @@ while sim_time < P.end_time:
         # Update Plane and Missile States using above forces & moments
         pl_dyn.update(plU)
         mi_dyn.update(miU)
-        mi_dyn.state[6][0] = 0.; mi_dyn.state[9][0] = 0.
+        # mi_dyn.state[6][0] = 0.; mi_dyn.state[9][0] = 0.
 
         # if state == 1:
         #     print("Distance:",dist," Spherical Theta:",sph_thet," Spherical Phi:",sph_phi, " Mode: Roll")
