@@ -14,13 +14,22 @@ import dynamics.Plane_Dynamics as Plane
 import dynamics.Missile_Dynamics as Missile
 from viewers.Animation import Animation
 from viewers.dataPlotter import dataPlotter
-import dynamics.compute_trim as CompT
+import dynamics.Plane_compute_trim as Pl_CompT
+import dynamics.Missile_compute_trim as Mi_CompT
 import dynamics.autopilot as Auto
 
+# Create trim condition for plane
 Vatgt = 250.; Ytgt = 0.; Rtgt = np.inf
-CT = CompT.ComputeTrim()
+CT = Pl_CompT.ComputeTrim()
 pl_x_trim, pl_d = CT.compute_trim(Vatgt, Ytgt, Rtgt)
 pl_x_trim[0][0] = 50; pl_x_trim[1][0] = -30.; pl_x_trim[2][0] = -90.
+
+# Create trim states for missile for gains calculations
+Vatgt = 200.
+mi_CT = Mi_CompT.ComputeTrim()
+mi_x_trim, mi_d_trim = mi_CT.compute_trim(Vatgt, Ytgt, Rtgt)
+mi_x_trim[0][0] = 0.; mi_x_trim[1][0] = 0.; mi_x_trim[2][0] = -100.
+k_phi, k_chi, k_thet = Mi_CompT.compute_gains.compute_tf_models(mi_x_trim, mi_d_trim)
 
 # Initialize Animation, Dynamics, Data Plotter, Input Methods
 anim =  Animation(P.mis_states0, pl_x_trim)
@@ -36,16 +45,16 @@ print("Press Command-Q to exit...")
 
 # Create PN Stuff
 Ts = P.ts_simulation
-kPN_la = 3.
-kPN_lo = 3.
+kPN_la = 2.
+kPN_lo = 2.
 # dist_l = 0.
 # sph_thet_l = 0.
 # sph_phi_l = 0.
 
 # Create array of PID gains
-k = np.array([[0.003, 0.02, 0.005],     # Kp, Kd, Ki for roll control
-              [-0.002, 0.05, 0.01],     # Kp, Kd, Ki for pitch control
-              [-0.003, 0.05, 0.0]])    # Kp, Kd, Ki for yaw control
+k = np.array([[-0.2*k_phi[0], 0.005*k_phi[1], 0.001*k_phi[2]],     # Kp, Kd, Ki for roll control
+              [0.6*k_thet[0], 0.005*k_thet[1], 0.01*k_thet[2]],     # Kp, Kd, Ki for pitch control
+              [0.5*k_chi[0], 0.008*k_chi[1], 0.1*k_chi[2]]])    # Kp, Kd, Ki for yaw control
 
 while sim_time < P.end_time:
 
@@ -85,10 +94,6 @@ while sim_time < P.end_time:
     while sim_time < ts_plot:
 
         # Remove the roll degree of freedom until we figure out coordinated turns
-        # mi_dyn.state[6][0] = 0.; mi_dyn.state[9][0] = 0.
-
-        # Missile Control and Simulation
-        # Thrust as a func of time of the form T = at*b^-ct? 
 
         # Find deflections from autopilot/state machine
         d_a, d_e, d_r = Auto.autopilot(sim_time, mi_dyn.state[6][0], Thetadot_c, mi_dyn.state[10][0], Psidot_c, mi_dyn.state[11][0], k)
@@ -114,7 +119,7 @@ while sim_time < P.end_time:
 
         sim_time += P.ts_simulation
 
-    tgts = np.array([N_c, E_c, D_c])
+    tgts = np.array([N_c, E_c, D_c, Thetadot_c, Psidot_c])
     dp.update(sim_time, mi_dyn.state, pl_dyn.state, mi_d, tgts)                        # Update plot including target values
     anim.update(mi_dyn.state, pl_dyn.state) # -pd for height                # Update Plane and Missile in animation
     plt.pause(0.0001)
