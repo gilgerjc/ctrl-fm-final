@@ -37,7 +37,7 @@ mi_k_th = 1769.663
 mi_C_L_0 = 0.23;       mi_C_D_0 = 0.02;          mi_C_m_0 = 0.0135
 mi_C_L_alpha = 5.61;   mi_C_D_alpha = 0.030;      mi_C_m_alpha = -2.74
 mi_C_L_q = 7.95;       mi_C_D_q = 0.0;            mi_C_m_q = -38.21
-mi_C_L_delta_e = 0.13; mi_C_D_delta_e = 0.0135;   mi_C_m_delta_e = -0.069
+mi_C_L_delta_e = 0.13; mi_C_D_delta_e = 0.0135;   mi_C_m_delta_e = -0.99
 
 M = 50
 alpha0 = 0.47
@@ -46,7 +46,7 @@ epsilon = 0.16
 mi_C_D_p = 0.0
 mi_C_Y_0 = 0.0;    mi_C_Y_beta = -0.98;   mi_C_Y_p = 0.0;   mi_C_Y_r = 0.0;    mi_C_Y_delta_a = 0.075;  mi_C_Y_delta_r = 0.19
 mi_C_ell_0 = 0.0;  mi_C_ell_beta = -0.13; mi_C_ell_delta_a = -0.069
-mi_C_n_0 = 0.0;    mi_C_n_beta = 0.073;   mi_C_n_r = -0.095;    mi_C_n_p = -0.069;     mi_C_n_delta_a = -0.011;     mi_C_n_delta_r = -0.069
+mi_C_n_0 = 0.0;    mi_C_n_beta = 0.073;   mi_C_n_r = -0.095;    mi_C_n_p = -0.069;     mi_C_n_delta_a = -0.011;     mi_C_n_delta_r = -0.099
 mi_C_ell_p = -0.51; mi_C_ell_r = 0.25;     mi_C_ell_delta_r = 0.0024
 
 C_p_0 = mi_G3*mi_C_ell_0 + mi_G4*mi_C_n_0
