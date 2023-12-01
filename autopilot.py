@@ -3,7 +3,7 @@ import dynamics.hold_loops as LP
 import dynamics.Missile_Dynamics as MD
 import parameters.simulation_parameters as P
 
-def autopilot(t, phi_c, phi, thetadot_c, thetadot, psidot_c, psidot, k):
+def autopilot(t, phi, thetadot_c, thetadot, psidot_c, psidot, k):
     '''d_1, d_2, d_3, d_4, state = autopilot(u)
     Takes arguments of the current simulation time, the commanded roll angle, the current roll angle,
     the commanded pitch rate, the current pitch rate, the commanded yaw rate, the current yaw rate,
@@ -38,20 +38,26 @@ def autopilot(t, phi_c, phi, thetadot_c, thetadot, psidot_c, psidot, k):
         reset_yaw = True
 
     # State Machine
-    if phi < phi_c - roll_hold_range or phi > phi_c + roll_hold_range:      # If missile is not at acceptable roll angle, roll state
-        mode = 1                                                            # Indicate roll mode
-        d_2, d_4 = MD.Guidance.roll_PID(phi_c, phi, k_roll, reset_roll)     # Determine bottom and top deflections per PID
-        reset_yaw = True                                                    # Next time you leave roll mode, reset integ + diff for yaw
-        reset_roll = False                                                  # Do not reset integ + diff for roll while in this mode
+    # if phi < phi_c - roll_hold_range or phi > phi_c + roll_hold_range:      # If missile is not at acceptable roll angle, roll state
+    #     mode = 1                                                            # Indicate roll mode
+    #     d_2, d_4 = MD.Guidance.roll_PID(phi_c, phi, k_roll, reset_roll)     # Determine bottom and top deflections per PID
+    #     reset_yaw = True                                                    # Next time you leave roll mode, reset integ + diff for yaw
+    #     reset_roll = False                                                  # Do not reset integ + diff for roll while in this mode
 
-    else:                                                                   # If missile is at acceptable roll angle, yaw state
-        mode = 2                                                            # Indicate yaw mode
-        d_2, d_4 = MD.Guidance.yaw_PID(psidot_c, psidot, k_yaw, reset_yaw)  # Determine bottom and top deflections per PID
-        reset_roll = True                                                   # Next Time you leave yaw mode, reset integ + diff for roll
-        reset_yaw = False                                                   # Do not reset integ + diff for yaw while in this mode
+    # else:                                                                   # If missile is at acceptable roll angle, yaw state
+    #     mode = 2                                                            # Indicate yaw mode
+    #     d_2, d_4 = MD.Guidance.yaw_PID(psidot_c, psidot, k_yaw, reset_yaw)  # Determine bottom and top deflections per PID
+    #     reset_roll = True                                                   # Next Time you leave yaw mode, reset integ + diff for roll
+    #     reset_yaw = False                                                   # Do not reset integ + diff for yaw while in this mode
 
-    
-    d_1, d_3 = MD.Guidance.pit_PID(thetadot_c, thetadot, k_pit, reset_pitch)    # Determine right and left deflections per PID
+    phi_c = MD.Guidance.yaw_PID(psidot_c, psidot, k_yaw, reset_yaw)
+    d_a = MD. Guidance.roll_PID(phi_c, phi, k_roll, reset_roll)
+    d_e = MD.Guidance.pit_PID(thetadot_c, thetadot, k_pit, reset_pitch)    # Determine right and left deflections per PID
+    d_r = 0.
+
+    reset_roll = False
     reset_pitch = False                                                         # Do not reset integ + diff for pitch after initialization
+    reset_yaw = False
 
-    return (d_1,d_2,d_3,d_4,mode)
+    mode = 0
+    return (d_a,d_e,d_r)

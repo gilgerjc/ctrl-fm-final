@@ -151,6 +151,7 @@ def saturate(u, limit):
                 u[i][j] = limit*np.sign(u[i][j])
     return u
 
+
 class forces_moments:
 
     def aspeed(state, Vwss, Vwg):
@@ -179,14 +180,9 @@ class forces_moments:
         p = state[9][0];    q = state[10][0];       r = state[11][0]
 
         # Inputs
-        d_1 = d[0][0]
-        d_2 = d[1][0]
-        d_3 = d[2][0]
-        d_4 = d[3][0]
-
-        d_ele = 0.5*(d_1 - d_3)
-        d_rud = 0.5*(d_2 - d_4)
-        d_ail = 0.25*(d_1 + d_2 + d_3 + d_4)
+        d_ail = d[0][0]
+        d_ele = d[1][0]
+        d_rud = d[2][0]
         d_t = 1.
 
         # Parameters
@@ -198,10 +194,10 @@ class forces_moments:
         Fg = Tran.v2b([[0.],[0.],[m*g]], phi, theta, psi)
 
         # Find the magnitude of airspeed and Wind Frame Angles
-        Va = np.array([[u], [v], [w]])              # Airspeed in body frame WHEN NO WIND -- CHANGE AFTER HW5
-        VaMag = np.linalg.norm(Va)                  #Magnitude of airspeed
-        alpha = np.arctan2(Va[2][0],Va[0][0])           #Angle of Attack
-        beta = np.arcsin(Va[1][0]/VaMag)                #Sideslip Angle
+        Va = np.array([[u], [v], [w]])                  # Airspeed in body frame WHEN NO WIND -- CHANGE AFTER HW5
+        VaMag = np.linalg.norm(Va)                      # Magnitude of airspeed
+        alpha = np.arctan2(Va[2][0],Va[0][0])           # Angle of Attack
+        beta = np.arcsin(Va[1][0]/VaMag)                # Sideslip Angle
 
 
         # Find the force of Lift
@@ -256,14 +252,9 @@ class forces_moments:
         p = state[9][0];    q = state[10][0];       r = state[11][0]
 
         # Inputs
-        d_1 = d[0][0]
-        d_2 = d[1][0]
-        d_3 = d[2][0]
-        d_4 = d[3][0]
-
-        d_ele = 0.5*(d_1 - d_3)
-        d_rud = 0.5*(d_2 - d_4)
-        d_ail= 0.25*(d_1 + d_2 + d_3 + d_4)
+        d_ail = d[0][0]
+        d_ele = d[1][0]
+        d_rud = d[2][0]
         d_t = 1.
 
         # Parameters
@@ -313,7 +304,7 @@ class forces_moments:
         N = Moms[2][0]
 
         return L, M, N
-    
+
 
 
 class Guidance:
@@ -376,6 +367,7 @@ class Guidance:
         Gam_dot_c = N*Phi_dot
         return Gam_dot_c
 
+
     def PN_Demo(mi_state, pl_state, N_lon, N_lat):
         mi_pn = mi_state[0][0]; mi_pe = mi_state[1][0]; mi_pd = mi_state[2][0]
         mi_u = mi_state[3][0];  mi_v = mi_state[4][0];  mi_w = mi_state[5][0]
@@ -394,8 +386,8 @@ class Guidance:
         Vt = np.linalg.norm([pl_u,pl_v,pl_w])
         Vm = np.linalg.norm([mi_u,mi_v,mi_w])
 
-        zetOdot = (Vt*np.sin(pl_thet-zetO) - Vm*np.sin(mi_thet-zetO))
-        zetAdot = (Vt*np.sin(pl_psi-zetA) - Vm*np.sin(mi_psi-zetA))
+        zetOdot = (Vt*np.sin(pl_thet-zetO) - Vm*np.sin(mi_thet-zetO))/r
+        zetAdot = (Vt*np.sin(pl_psi-zetA) - Vm*np.sin(mi_psi-zetA))/r
 
         Gam_dot_c = N_lon*zetOdot
         Chi_dot_c = N_lat*zetAdot
@@ -431,18 +423,16 @@ class Guidance:
         roll_error_d1 = error
         
         # PID controller
-        d_r = kp*error + ki*roll_uI + kd*roll_uD
-        d_2 = -d_r/2.; d_4 = d_2
+        d_a = kp*error + ki*roll_uI + kd*roll_uD
 
         # Saturation block
-        d_2_sat = sat(d_2,ulim,llim)
-        d_4_sat = sat(d_4, ulim, llim)
-
+        d_a_sat = sat(d_a,ulim,llim)
+    
         # Integrator unwind if there is integrator control
         if ki != 0:
-            roll_uI = roll_uI + dt/ki*(d_2_sat-d_2)
+            roll_uI = roll_uI + dt/ki*(d_a_sat-d_a)
 
-        return d_2_sat, d_4_sat
+        return d_a
     
 
     def pit_PID(thetdot_c, thetdot, k, flag):
@@ -475,17 +465,15 @@ class Guidance:
         
         # PID controller
         d_e = kp*error + ki*pit_uI + kd*pit_uD
-        d_1 = -d_e/2.; d_3 = -d_1
 
         # Saturation block
-        d_1_sat = sat(d_1,ulim,llim)
-        d_3_sat = sat(d_3, ulim, llim)
+        d_e_sat = sat(d_e,ulim,llim)
 
         # Integrator unwind if there is integrator control
         if ki != 0:
-            pit_uI = pit_uI + dt/ki*(d_1_sat-d_1)
+            pit_uI = pit_uI + dt/ki*(d_e_sat-d_e)
 
-        return d_1_sat, d_3_sat
+        return d_e_sat
         
 
     def yaw_PID(psidot_c, psidot, k, flag):
@@ -496,7 +484,7 @@ class Guidance:
         dt = P.ts_simulation
 
         # Upper and lower limits for aileron deflection
-        ulim = P.d_max; llim = -P.d_max
+        ulim = np.pi/2; llim = -np.pi/2
         
         # Gains for aileron control loop
         kp = k[0]; kd = k[1]; ki = k[2]
@@ -517,19 +505,117 @@ class Guidance:
         yaw_error_d1 = error
         
         # PID controller
-        d_r = kp*error + ki*yaw_uI + kd*yaw_uD
-        d_2 = -d_r/2.; d_4 = -d_2
-
+        phi_c = kp*error + ki*yaw_uI + kd*yaw_uD
+       
         # Saturation block
-        d_2_sat = sat(d_2,ulim,llim)
-        d_4_sat = sat(d_4, ulim, llim)
+        phi_c_sat = sat(phi_c,ulim,llim)
 
         # Integrator unwind if there is integrator control
         if ki != 0:
-            yaw_uI = yaw_uI + dt/ki*(d_2_sat-d_2)
+            yaw_uI = yaw_uI + dt/ki*(phi_c_sat-phi_c)
 
-        return d_2_sat, d_4_sat
+        return phi_c_sat
     
+
+
+class compute_gains:
+    def compute_tf_models(x_trim, u_trim):
+    
+        # Inertial parameters ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        jx = P.mi_jx;  jy = P.mi_jy;  jz = P.mi_jz;  jxz = P.mi_jxz
+        G = P.mi_G;    G1 = P.mi_G1;  G2 = P.mi_G2;  G3 = P.mi_G3
+        G4 = P.mi_G4;  G5 = P.mi_G5;  G6 = P.mi_G6;  G7 = P.mi_G7;  G8 = P.mi_G8
+
+        g = P.gravity
+        m = P.mi_mass
+
+        ## aerodynamic parameters ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        S_wing        = P.mi_S;   b = P.mi_b; c = P.mi_c
+        
+        rho           = P.rho
+        e             = P.e
+        AR            = P.mi_AR
+        M             = P.M 
+        alpha0        = P.alpha0
+        epsilon       = P.epsilon
+
+        C_L_0         = P.mi_C_L_0;        C_D_0 = P.mi_C_D_0;                C_m_0 = P.mi_C_m_0
+        C_L_alpha     = P.mi_C_L_alpha;    C_D_alpha = P.mi_C_D_alpha;        C_m_alpha = P.mi_C_m_alpha
+        C_L_q         = P.mi_C_L_q;        C_D_q = P.mi_C_D_q;                C_m_q = P.mi_C_m_q
+        C_L_delta_e   = P.mi_C_L_delta_e;  C_D_delta_e = P.mi_C_D_delta_e;    C_m_delta_e = P.mi_C_m_delta_e
+    
+        C_D_p         = P.mi_C_D_p
+        C_Y_0         = P.mi_C_Y_0;        C_ell_0 = P.mi_C_ell_0;            C_n_0 = P.mi_C_n_0
+        C_Y_beta      = P.mi_C_Y_beta;     C_ell_beta = P.mi_C_ell_beta;      C_n_beta = P.mi_C_n_beta 
+        
+        C_Y_p         = P.mi_C_Y_p;        C_ell_p = P.mi_C_ell_p;            C_n_p = P.mi_C_n_p
+        C_Y_r         = P.mi_C_Y_r;        C_ell_r = P.mi_C_ell_r;            C_n_r = P.mi_C_n_r
+        
+        C_Y_delta_a   = P.mi_C_Y_delta_a;  C_ell_delta_a = P.mi_C_ell_delta_a; C_n_delta_a = P.mi_C_n_delta_a
+        C_Y_delta_r   = P.mi_C_Y_delta_r;  C_ell_delta_r = P.mi_C_ell_delta_r; C_n_delta_r = P.mi_C_n_delta_r
+        
+        k_th       = P.mi_k_th
+
+
+        Va_trim = np.sqrt(x_trim[3][0]**2 +x_trim[4][0]**2 +x_trim[5][0]**2)
+        alpha_trim = np.arctan2(x_trim[5][0],x_trim[3][0])
+        beta_trim = np.arctan2(x_trim[4][0],np.sqrt(x_trim[3][0]**2 + x_trim[5][0]**2))
+        theta_trim = x_trim[7][0]
+
+        #$ define transfer function constants
+        a_phi1   = -0.25*P.rho*Va_trim*P.S*P.b**2*P.C_ell_p
+        a_phi2   = 0.5*P.rho*Va_trim**2*P.S*P.b*P.C_ell_delta_a
+        
+        a_beta1  = -P.rho*Va_trim*P.S_wing*P.C_Y_beta/(2*P.mass*np.cos(beta_trim))
+        a_beta2  = P.rho*Va_trim*P.S_wing*P.C_Y_delta_r/(2*P.mass*np.cos(beta_trim))
+        
+        a_theta1 = -P.rho*Va_trim*P.c**2*P.S_wing*P.C_m_q/(4*P.jy)
+        a_theta2 = -P.rho*Va_trim**2*P.c*P.S_wing*P.C_m_alpha/(2*P.jy)
+        a_theta3 = P.rho*Va_trim**2*P.c*P.S_wing*P.C_m_delta_e/(2*P.jy)
+
+        a_V1     = P.rho*Va_trim*P.S_wing*(P.C_D_0 + P.C_D_alpha*alpha_trim + P.C_D_delta_e*u_trim[1][0])/P.mass + P.rho*P.S_prop*P.C_prop*Va_trim/P.mass
+        a_V2     = P.rho*P.S_prop*P.C_prop*P.k_motor**2*u_trim[3][0]/P.mass
+        a_V3     = P.gravity
+            
+        # Gains from Transfer Functions
+        kp_ph = P.da_max/P.phie_max
+        kd_ph = (2*P.zph*P.wn_ph-a_phi1)/a_phi2
+
+        kp_ch = 2*P.wn_ch*P.zch*Va_trim/P.gravity
+        ki_ch = P.wn_ch**2*Va_trim/P.gravity
+
+        kp_be = P.dr_max/P.bete_max
+        ki_be = ((a_beta1 + a_beta2*kp_be)/(2*P.zbe))**2/a_beta2
+
+        kp_th = P.de_max/P.thee_max*np.sign(a_theta3)
+        wn_th = np.sqrt(a_theta2+kp_th*a_theta3)
+        kd_th = (2*P.zth*wn_th - a_theta1)/a_theta3
+        kDC_th = (kp_th*a_theta3)/(a_theta2 + kp_th*a_theta3)
+
+        wn_h = wn_th/P.Wh
+        kp_h = (2*P.zh*wn_h)/(kDC_th*Va_trim)
+        ki_h = wn_h**2/(kDC_th*Va_trim)
+
+        wn_v2 = wn_th/P.Wv2
+        kp_v2 = (a_V1 - 2*P.zv2*wn_v2)/(kDC_th*P.gravity)
+        ki_v2 = wn_v2**2/(kDC_th*P.gravity)
+
+        kp_V = (2*P.zV*P.wn_V - a_V1)/a_V2
+        ki_V = P.wn_V**2/a_V2
+
+        ph_gs = np.array([kp_ph, kd_ph, 0.])
+        ch_gs = np.array([kp_ch, 0., ki_ch])
+        be_gs = np.array([kp_be, 0., ki_be])
+        th_gs = np.array([kp_th, kd_th, 0.])
+        h_gs = np.array([kp_h, 0., ki_h])
+        V2_gs = np.array([kp_v2, 0., ki_v2])
+        V_gs = np.array([kp_V, 0., ki_V])
+
+        # Return a 7x3 array of gains. Indeces:
+        # 1: phi hold   2: chi hold   3: beta hold
+        # 4: theta hold  5: h hold  6: Aspeed hold via pitch  7: Aspeed hold via throttle
+        return (ph_gs, ch_gs, be_gs, th_gs, h_gs, V2_gs, V_gs)
+
 
 def sat(u, uplim, lolim):
     if u >= uplim:
