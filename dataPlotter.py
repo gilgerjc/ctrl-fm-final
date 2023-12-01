@@ -26,6 +26,8 @@ class dataPlotter:
         self.mi_phi_history = [];           self.pl_phi_history = []    # Roll data
         self.mi_theta_history = [];         self.pl_theta_history = []  # Pitch data
         self.mi_psi_history = [];           self.pl_psi_history = []    # Yaw data 
+        self.mi_q_history = []
+        self.mi_r_history = []
 
         self.mi_VaMag_history = [];         self.pl_VaMag_history = []  # Airspeed data
         self.mi_d_a_history = [];         #self.pl_d_ail_history = []  # Aileron deflection data
@@ -36,8 +38,8 @@ class dataPlotter:
         self.refpe_history = []
         self.refpd_history = []
         # self.refphi_history = []
-        # self.reftheta_history = []
-        # self.refpsi_history = []
+        self.refthetadot_c_history = []
+        self.refpsidot_c_history = []
 
         # create a handle for every subplot.
         self.handle = []
@@ -50,9 +52,9 @@ class dataPlotter:
         self.handle.append(myPlot(self.ax[5,0], xlabel = 'time (s)', ylabel='psi (deg)'))
 
         self.handle.append(myPlot(self.ax[0,1], ylabel='Va (m/s)', title="Trim & Inputs"))
-        # self.handle.append(myPlot(self.ax[1,1], ylabel='Y (deg)'))
+        self.handle.append(myPlot(self.ax[1,1], ylabel='r_c (deg/s)'))
 
-        # self.handle.append(myPlot(self.ax[2,1], ylabel=''))
+        self.handle.append(myPlot(self.ax[2,1], ylabel='q_c (deg/s)'))
         self.handle.append(myPlot(self.ax[3,1], ylabel='d_ail'))
         self.handle.append(myPlot(self.ax[4,1], ylabel='d_ele'))
         self.handle.append(myPlot(self.ax[5,1], xlabel='time (s)', ylabel='d_rud'))
@@ -64,6 +66,8 @@ class dataPlotter:
         pn_c = tgtVal[0]
         pe_c = tgtVal[1]
         pd_c = tgtVal[2]
+        thetdot_c = tgtVal[3]
+        psidot_c = tgtVal[4]
         # phi_c = tgtVal[3]
         # theta_c = tgtVal[4]
         # psi_c = tgtVal[5]
@@ -75,6 +79,8 @@ class dataPlotter:
         mi_phi = mi_states[6][0];   pl_phi = pl_states[6][0]
         mi_theta = mi_states[7][0]; pl_theta = pl_states[7][0]
         mi_psi = mi_states[8][0];   pl_psi = pl_states[8][0]
+        mi_q = mi_states[10][0]
+        mi_r = mi_states[11][0]
 
         mi_Va = np.sqrt(mi_states[3][0]**2 + mi_states[4][0]**2 + mi_states[5][0]**2)
         pl_Va = np.sqrt(pl_states[3][0]**2 + pl_states[4][0]**2 + pl_states[5][0]**2)
@@ -91,6 +97,8 @@ class dataPlotter:
         self.mi_pn_history.append(mi_pn);                       self.pl_pn_history.append(pl_pn)                    # North Position
         self.mi_pe_history.append(mi_pe);                       self.pl_pe_history.append(pl_pe)                    # East Positiuon
         self.mi_pd_history.append(-mi_pd);                      self.pl_pd_history.append(-pl_pd)                   # Down Position
+        self.mi_q_history.append(mi_q*180./np.pi)
+        self.mi_r_history.append(mi_r*180./np.pi)
 
         self.mi_VaMag_history.append(mi_Va);                 self.pl_VaMag_history.append(pl_Va)              # Force in x
         # self.FPA_history.append(FPA*180./np.pi)  # 
@@ -102,8 +110,8 @@ class dataPlotter:
         self.refpe_history.append(pe_c)
         self.refpd_history.append(-pd_c)
         # self.refphi_history.append(phi_c*180./np.pi)
-        # self.reftheta_history.append(theta_c*180./np.pi)
-        # self.refpsi_history.append(psi_c*180./np.pi)
+        self.refthetadot_c_history.append(thetdot_c*180./np.pi)
+        self.refpsidot_c_history.append(psidot_c*180./np.pi)
 
         # update the plots with associated histories
         self.handle[0].update(self.time_history, [self.mi_pn_history, self.pl_pn_history, self.refpn_history])
@@ -115,11 +123,11 @@ class dataPlotter:
         self.handle[5].update(self.time_history, [self.mi_psi_history, self.pl_psi_history])
 
         self.handle[6].update(self.time_history, [self.mi_VaMag_history, self.pl_VaMag_history])
-        # self.handle[7].update(self.time_history, [self.FPA_history, self.refGam_history])
-        # self.handle[7].update(self.time_history, [self.mi_d_1_history])
-        self.handle[7].update(self.time_history, [self.mi_d_a_history])
-        self.handle[8].update(self.time_history, [self.mi_d_e_history])
-        self.handle[9].update(self.time_history, [self.mi_d_r_history])
+        self.handle[7].update(self.time_history, [self.mi_r_history, self.refpsidot_c_history])
+        self.handle[8].update(self.time_history, [self.mi_q_history, self.refthetadot_c_history])
+        self.handle[9].update(self.time_history, [self.mi_d_a_history])
+        self.handle[10].update(self.time_history, [self.mi_d_e_history])
+        self.handle[11].update(self.time_history, [self.mi_d_r_history])
 
 
 class myPlot:
