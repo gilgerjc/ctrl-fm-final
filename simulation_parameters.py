@@ -34,7 +34,7 @@ epsilon = 0.16
 
 mi_k_th = 1769.663
 
-mi_C_L_0 = 0.23;       mi_C_D_0 = 0.02;          mi_C_m_0 = 0.0135
+mi_C_L_0 = 0.23;       mi_C_D_0 = 0.043;          mi_C_m_0 = 0.0135
 mi_C_L_alpha = 5.61;   mi_C_D_alpha = 0.030;      mi_C_m_alpha = -2.74
 mi_C_L_q = 7.95;       mi_C_D_q = 0.0;            mi_C_m_q = -38.21
 mi_C_L_delta_e = 0.13; mi_C_D_delta_e = 0.0135;   mi_C_m_delta_e = -0.99
@@ -125,12 +125,12 @@ roll_hold_range = 2.*np.pi/180.
 d_max = 45.*np.pi/180.
 
 # Loop closure design parameters
-zph = 0.15; tr_ph = 1.
+zph = 0.7; tr_ph = 1.
 wn_ph = np.pi/(2*tr_ph*np.sqrt(1-zph**2))
 da_max = 45.*np.pi/180.
 phie_max = 15.*np.pi/180.
 
-zch = 0.12
+zch = 0.22
 Wx = 6.
 wn_ch = wn_ph/Wx
 
@@ -138,7 +138,7 @@ zbe = 1./np.sqrt(2)
 dr_max = 45.*np.pi/180.
 bete_max = 20.*np.pi/180.
 
-zth = 0.20; tr_th = 4.
+zth = 0.10; tr_th = 4.
 de_max = 45.*np.pi/180.
 thee_max = 10.*np.pi/180.
 
@@ -160,6 +160,6 @@ plot_lim = 15.
 ts_simulation = 0.0001    # smallest time step for simulation
 start_time = 0.         # start time for simulation
 end_time = 40.          # end time for simulation
-ts_plotting = ts_simulation*10.      # refresh rate for plots
+ts_plotting = ts_simulation*20.      # refresh rate for plots
 
-ts_sensor = ts_simulation*2.  # sample rate for the controller
+ts_sensor = ts_simulation*6.  # sample rate for the controller
