@@ -38,8 +38,8 @@ class dataPlotter:
         self.refpe_history = []
         self.refpd_history = []
         # self.refphi_history = []
-        self.refthetadot_c_history = []
-        self.refpsidot_c_history = []
+        self.reftheta_c_history = []
+        self.refpsi_c_history = []
 
         # create a handle for every subplot.
         self.handle = []
@@ -52,9 +52,9 @@ class dataPlotter:
         self.handle.append(myPlot(self.ax[5,0], xlabel = 'time (s)', ylabel='psi (deg)'))
 
         self.handle.append(myPlot(self.ax[0,1], ylabel='Va (m/s)', title="Trim & Inputs"))
-        self.handle.append(myPlot(self.ax[1,1], ylabel='r_c (deg/s)'))
+        # self.handle.append(myPlot(self.ax[1,1], ylabel='psi_c (deg/s)'))
 
-        self.handle.append(myPlot(self.ax[2,1], ylabel='q_c (deg/s)'))
+        # self.handle.append(myPlot(self.ax[2,1], ylabel='thet_c (deg/s)'))
         self.handle.append(myPlot(self.ax[3,1], ylabel='d_ail'))
         self.handle.append(myPlot(self.ax[4,1], ylabel='d_ele'))
         self.handle.append(myPlot(self.ax[5,1], xlabel='time (s)', ylabel='d_rud'))
@@ -66,8 +66,8 @@ class dataPlotter:
         pn_c = tgtVal[0]
         pe_c = tgtVal[1]
         pd_c = tgtVal[2]
-        thetdot_c = tgtVal[3]
-        psidot_c = tgtVal[4]
+        thet_c = tgtVal[3]
+        psi_c = tgtVal[4]
         # phi_c = tgtVal[3]
         # theta_c = tgtVal[4]
         # psi_c = tgtVal[5]
@@ -110,8 +110,8 @@ class dataPlotter:
         self.refpe_history.append(pe_c)
         self.refpd_history.append(-pd_c)
         # self.refphi_history.append(phi_c*180./np.pi)
-        self.refthetadot_c_history.append(thetdot_c*180./np.pi)
-        self.refpsidot_c_history.append(psidot_c*180./np.pi)
+        self.reftheta_c_history.append(thet_c*180./np.pi)
+        self.refpsi_c_history.append(psi_c*180./np.pi)
 
         # update the plots with associated histories
         self.handle[0].update(self.time_history, [self.mi_pn_history, self.pl_pn_history, self.refpn_history])
@@ -119,15 +119,15 @@ class dataPlotter:
         self.handle[2].update(self.time_history, [self.mi_pd_history, self.pl_pd_history, self.refpd_history])
 
         self.handle[3].update(self.time_history, [self.mi_phi_history, self.pl_phi_history])
-        self.handle[4].update(self.time_history, [self.mi_theta_history, self.pl_theta_history])
-        self.handle[5].update(self.time_history, [self.mi_psi_history, self.pl_psi_history])
+        self.handle[4].update(self.time_history, [self.mi_theta_history, self.pl_theta_history, self.reftheta_c_history])
+        self.handle[5].update(self.time_history, [self.mi_psi_history, self.pl_psi_history, self.refpsi_c_history])
 
         self.handle[6].update(self.time_history, [self.mi_VaMag_history, self.pl_VaMag_history])
-        self.handle[7].update(self.time_history, [self.mi_r_history, self.refpsidot_c_history])
-        self.handle[8].update(self.time_history, [self.mi_q_history, self.refthetadot_c_history])
-        self.handle[9].update(self.time_history, [self.mi_d_a_history])
-        self.handle[10].update(self.time_history, [self.mi_d_e_history])
-        self.handle[11].update(self.time_history, [self.mi_d_r_history])
+        # self.handle[7].update(self.time_history, [self.mi_r_history, self.refpsi_c_history])
+        # self.handle[8].update(self.time_history, [self.mi_q_history, self.refthetadot_c_history])
+        self.handle[7].update(self.time_history, [self.mi_d_a_history])
+        self.handle[8].update(self.time_history, [self.mi_d_e_history])
+        self.handle[9].update(self.time_history, [self.mi_d_r_history])
 
 
 class myPlot:
