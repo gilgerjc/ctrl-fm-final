@@ -3,7 +3,7 @@ import dynamics.hold_loops as LP
 import dynamics.Missile_Dynamics as MD
 import parameters.simulation_parameters as P
 
-def autopilot(t, phi, thetadot_c, thetadot, psidot_c, psidot, k):
+def autopilot(t, phi, theta_c, theta, psi_c, psi, k):
     '''d_1, d_2, d_3, d_4, state = autopilot(u)
     Takes arguments of the current simulation time, the commanded roll angle, the current roll angle,
     the commanded pitch rate, the current pitch rate, the commanded yaw rate, the current yaw rate,
@@ -50,9 +50,9 @@ def autopilot(t, phi, thetadot_c, thetadot, psidot_c, psidot, k):
     #     reset_roll = True                                                   # Next Time you leave yaw mode, reset integ + diff for roll
     #     reset_yaw = False                                                   # Do not reset integ + diff for yaw while in this mode
 
-    phi_c = MD.Guidance.yaw_PID(psidot_c, psidot, k_yaw, reset_yaw)
+    phi_c = MD.Guidance.yaw_PID(psi_c, psi, k_yaw, reset_yaw)
     d_a = MD. Guidance.roll_PID(phi_c, phi, k_roll, reset_roll)
-    d_e = MD.Guidance.pit_PID(thetadot_c, thetadot, k_pit, reset_pitch)    # Determine right and left deflections per PID
+    d_e = MD.Guidance.pit_PID(theta_c, theta, k_pit, reset_pitch)    # Determine right and left deflections per PID
     d_r = 0.
 
     reset_roll = False
