@@ -45,8 +45,8 @@ epsilon = 0.16
 
 mi_C_D_p = 0.0
 mi_C_Y_0 = 0.0;    mi_C_Y_beta = -0.98;   mi_C_Y_p = 0.0;   mi_C_Y_r = 0.0;    mi_C_Y_delta_a = 0.075;  mi_C_Y_delta_r = 0.19
-mi_C_ell_0 = 0.0;  mi_C_ell_beta = -0.13; mi_C_ell_delta_a = -0.069
-mi_C_n_0 = 0.0;    mi_C_n_beta = 0.073;   mi_C_n_r = -0.095;    mi_C_n_p = -0.069;     mi_C_n_delta_a = -0.011;     mi_C_n_delta_r = -0.099
+mi_C_ell_0 = 0.0;  mi_C_ell_beta = -0.13; mi_C_ell_delta_a = 0.17
+mi_C_n_0 = 0.0;    mi_C_n_beta = 0.073;   mi_C_n_r = -0.095;    mi_C_n_p = -0.069;     mi_C_n_delta_a = -0.011;     mi_C_n_delta_r = -0.069
 mi_C_ell_p = -0.51; mi_C_ell_r = 0.25;     mi_C_ell_delta_r = 0.0024
 
 C_p_0 = mi_G3*mi_C_ell_0 + mi_G4*mi_C_n_0
@@ -124,14 +124,42 @@ sig_PID = 0.05
 roll_hold_range = 2.*np.pi/180.
 d_max = 45.*np.pi/180.
 
+# Loop closure design parameters
+zph = 0.15; tr_ph = 1.
+wn_ph = np.pi/(2*tr_ph*np.sqrt(1-zph**2))
+da_max = 45.*np.pi/180.
+phie_max = 15.*np.pi/180.
+
+zch = 0.12
+Wx = 6.
+wn_ch = wn_ph/Wx
+
+zbe = 1./np.sqrt(2)
+dr_max = 45.*np.pi/180.
+bete_max = 20.*np.pi/180.
+
+zth = 0.20; tr_th = 4.
+de_max = 45.*np.pi/180.
+thee_max = 10.*np.pi/180.
+
+zh = 0.95
+Wh = 69.
+
+zv2 = .9
+Wv2 = 6.
+
+zV = .1; tr_V = 6.
+wn_V = np.pi/(2*tr_V*np.sqrt(1-zV**2))
+Wv = 4.
+
 ######################################################################################
                 #   Simulation Params
 ######################################################################################
 plot_lim = 15.
 
-ts_simulation = 0.001    # smallest time step for simulation
+ts_simulation = 0.0001    # smallest time step for simulation
 start_time = 0.         # start time for simulation
 end_time = 40.          # end time for simulation
-ts_plotting = ts_simulation*5.      # refresh rate for plots
+ts_plotting = ts_simulation*10.      # refresh rate for plots
 
 ts_sensor = ts_simulation*2.  # sample rate for the controller
